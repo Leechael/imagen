@@ -5,16 +5,17 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"image"
+	"image/png"
 	"io"
 	"mime"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"regexp"
 	"sort"
-	"strconv"
 	"strings"
 	"time"
+
+	"nano-banana-image-skill/internal/keyer"
 
 	"google.golang.org/genai"
 )
@@ -331,7 +332,7 @@ Options:
   -m, --model MODEL     Model name or alias: flash, pro (default: flash)
   -d, --dir DIR         Output directory (default: current directory)
   -r, --ref FILE        Reference image (can be repeated)
-  -t, --transparent     Remove background (requires ffmpeg + magick)
+  -t, --transparent     Remove background (pure Go, no external tools)
       --api-key KEY     Gemini API key (or set GEMINI_API_KEY)
       --costs           Show accumulated cost summary
       --json            JSON output mode
@@ -428,45 +429,26 @@ func loadReference(path string) ([]byte, string, error) {
 	}
 	return b, m, nil
 }
-func runCommand(name string, args ...string) (string, error) {
-	out, err := exec.Command(name, args...).CombinedOutput()
-	if err != nil {
-		return "", fmt.Errorf("%s failed: %s", name, strings.TrimSpace(string(out)))
-	}
-	return strings.TrimSpace(string(out)), nil
-}
-func detectKeyColor(path string) (string, error) {
-	out, err := runCommand("magick", path, "-crop", "4x4+0+0", "+repage", "-format", "%c", "histogram:info:-")
+func removeBackground(input string, mode outputMode) (string, error) {
+	f, err := os.Open(input)
 	if err != nil {
 		return "", err
 	}
-	re := regexp.MustCompile(`(?m)^\s*(\d+):.*#([0-9A-Fa-f]{6})`)
-	matches := re.FindAllStringSubmatch(out, -1)
-	bestCount, bestColor := -1, "00FF00"
-	for _, m := range matches {
-		c, _ := strconv.Atoi(m[1])
-		if c > bestCount {
-			bestCount, bestColor = c, strings.ToUpper(m[2])
-		}
+	defer f.Close()
+	img, _, err := image.Decode(f)
+	if err != nil {
+		return "", fmt.Errorf("decode %s: %w", input, err)
 	}
-	return bestColor, nil
-}
-func removeBackground(input string, mode outputMode) (string, error) {
+	result := keyer.RemoveBackground(img)
 	dir := filepath.Dir(input)
 	base := strings.TrimSuffix(filepath.Base(input), filepath.Ext(input))
-	keyed := filepath.Join(dir, base+"_keyed.png")
 	out := filepath.Join(dir, base+".png")
-	key, err := detectKeyColor(input)
+	w, err := os.Create(out)
 	if err != nil {
 		return "", err
 	}
-	_, err = runCommand("ffmpeg", "-y", "-i", input, "-vf", fmt.Sprintf("colorkey=0x%s:0.25:0.08,despill=green", key), keyed)
-	if err != nil {
-		return "", err
-	}
-	defer os.Remove(keyed)
-	_, err = runCommand("magick", keyed, "-trim", "+repage", out)
-	if err != nil {
+	defer w.Close()
+	if err := png.Encode(w, result); err != nil {
 		return "", err
 	}
 	_ = mode

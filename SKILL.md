@@ -11,7 +11,7 @@ AI image generation CLI. Default model: Gemini 3.1 Flash Image Preview.
 
 - Go 1.25+
 - `GEMINI_API_KEY` environment variable set (or `~/.nano-banana/.env`)
-- (Optional) FFmpeg + ImageMagick for transparent mode
+- Transparent mode works out of the box (pure Go, no external tools)
 
 Get a Gemini API key at: https://aistudio.google.com/apikey
 
@@ -55,7 +55,7 @@ source ~/.zshrc
 | `-m, --model` | `flash` | Model: `flash`/`nb2`, `pro`/`nb-pro`, or any model ID |
 | `-d, --dir` | current directory | Output directory |
 | `-r, --ref` | - | Reference image (can use multiple times) |
-| `-t, --transparent` | - | Generate on green screen, remove background (FFmpeg) |
+| `-t, --transparent` | - | Generate on green screen, remove background (pure Go) |
 | `--api-key` | - | Gemini API key (overrides env/file) |
 | `--costs` | - | Show cost summary |
 | `--json` | - | JSON output (stdout, script-friendly) |
@@ -114,9 +114,7 @@ nano-banana "robot mascot character" -t -o mascot
 nano-banana "pixel art treasure chest" -t -o chest
 ```
 
-The `-t` flag automatically prompts the AI to generate on a green screen, then uses FFmpeg `colorkey` + `despill` to key out the background and remove green spill from edge pixels.
-
-Requires: `brew install ffmpeg imagemagick`
+The `-t` flag automatically prompts the AI to generate on a green screen, then uses a built-in pure Go implementation of `colorkey` + `despill` to key out the background and remove green spill from edge pixels. No external tools required.
 
 ### Exact Dimensions
 
