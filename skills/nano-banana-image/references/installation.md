@@ -55,3 +55,27 @@ Your `.env` should use a 1Password secret reference:
 ```
 GEMINI_API_KEY=op://vault/gemini/api-key
 ```
+
+## Stdin & Scripting
+
+Prompt can be piped via stdin instead of positional arguments:
+
+```bash
+echo "a cat in a spacesuit" | nano-banana
+pbpaste | nano-banana -s 2K -o result
+```
+
+Use `--plain` or `--json` for script-friendly output:
+
+```bash
+# Get just the filename
+file=$(nano-banana --plain "icon for settings page" -t -o settings-icon)
+
+# JSON output for programmatic consumption
+nano-banana --json "product mockup" | jq -r '.files[0]'
+
+# Batch generate
+for prompt in "sun" "moon" "star"; do
+  nano-banana --plain "$prompt" -t -o "$prompt"
+done
+```

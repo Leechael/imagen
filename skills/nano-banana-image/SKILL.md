@@ -1,6 +1,6 @@
 ---
 name: nano-banana-image
-description: Generate AI images using nano-banana CLI (Gemini Flash/Pro). Use this skill when asked to generate images, create sprites, make assets, produce artwork, or any image generation task. Supports multi-resolution (512–4K), aspect ratios, reference images for style transfer, and transparent background removal.
+description: Use when asked to generate images, create sprites, make visual assets, or produce artwork.
 compatibility: Requires nano-banana binary in PATH and GEMINI_API_KEY.
 ---
 
