@@ -1,0 +1,38 @@
+default_install_hook_types = ["pre-commit", "pre-push"]
+
+[[repos]]
+repo = "https://github.com/pre-commit/pre-commit-hooks"
+rev = "v6.0.0"
+hooks = [
+  { id = "trailing-whitespace" },
+  { id = "end-of-file-fixer" },
+  { id = "check-yaml" },
+  { id = "check-json" },
+  { id = "check-added-large-files", args = ["--maxkb=512"] },
+]
+
+[[repos]]
+repo = "local"
+
+[[repos.hooks]]
+id = "go-fmt"
+name = "go fmt"
+language = "system"
+entry = "gofmt -w"
+types = ["go"]
+
+[[repos.hooks]]
+id = "go-vet"
+name = "go vet"
+language = "system"
+entry = "go vet ./..."
+pass_filenames = false
+stages = ["pre-push"]
+
+[[repos.hooks]]
+id = "go-test-short"
+name = "go test (short)"
+language = "system"
+entry = "go test ./... -short -count=1"
+pass_filenames = false
+stages = ["pre-push"]

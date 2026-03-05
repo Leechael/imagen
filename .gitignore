@@ -1,0 +1,8 @@
+.env
+*.log
+*.png
+.DS_Store
+/nano-banana
+bin/
+dist/
+nano-banana-2-skill/
