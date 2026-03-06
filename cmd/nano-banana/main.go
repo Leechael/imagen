@@ -10,6 +10,7 @@ import (
 	"io"
 	"mime"
 	"os"
+	"strconv"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -45,18 +46,21 @@ const (
 )
 
 type options struct {
-	Prompt      string
-	Output      string
-	Size        string
-	OutputDir   string
-	References  []string
-	Transparent bool
-	APIKey      string
-	Model       string
-	AspectRatio string
-	ShowCosts   bool
-	OutputMode  outputMode
-	JQ          string
+	Prompt           string
+	Output           string
+	Size             string
+	OutputDir        string
+	References       []string
+	Transparent      bool
+	APIKey           string
+	Model            string
+	AspectRatio      string
+	Seed             *int32
+	PersonGeneration string
+	ThinkingLevel    string
+	ShowCosts        bool
+	OutputMode       outputMode
+	JQ               string
 }
 
 type costRate struct {
@@ -223,6 +227,43 @@ func parseArgs(args []string) (options, error) {
 			opts.References = append(opts.References, args[i])
 		case "-t", "--transparent":
 			opts.Transparent = true
+		case "--seed":
+			i++
+			if i >= len(args) {
+				return opts, errors.New("--seed 缺少值")
+			}
+			n, err := strconv.ParseInt(args[i], 10, 32)
+			if err != nil {
+				return opts, fmt.Errorf("invalid seed %q: %w", args[i], err)
+			}
+			v := int32(n)
+			opts.Seed = &v
+		case "--person":
+			i++
+			if i >= len(args) {
+				return opts, errors.New("--person 缺少值")
+			}
+			switch strings.ToUpper(args[i]) {
+			case "ALL", "ALLOW_ALL":
+				opts.PersonGeneration = "ALLOW_ALL"
+			case "ADULT", "ALLOW_ADULT":
+				opts.PersonGeneration = "ALLOW_ADULT"
+			case "NONE", "ALLOW_NONE":
+				opts.PersonGeneration = "ALLOW_NONE"
+			default:
+				return opts, fmt.Errorf("invalid --person value %q (use ALL, ADULT, NONE)", args[i])
+			}
+		case "--thinking":
+			i++
+			if i >= len(args) {
+				return opts, errors.New("--thinking 缺少值")
+			}
+			switch strings.ToLower(args[i]) {
+			case "minimal", "low", "medium", "high":
+				opts.ThinkingLevel = strings.ToUpper(args[i])
+			default:
+				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, low, medium, high)", args[i])
+			}
 		case "--api-key":
 			i++
 			if i >= len(args) {
@@ -271,9 +312,19 @@ func generate(ctx context.Context, opts options, apiKey string) (result, error) 
 	}
 	parts = append(parts, genai.NewPartFromText(prompt))
 	contents := []*genai.Content{genai.NewContentFromParts(parts, genai.RoleUser)}
-	cfg := &genai.GenerateContentConfig{ResponseModalities: []string{"IMAGE", "TEXT"}, ImageConfig: &genai.ImageConfig{ImageSize: imageSize(opts.Size)}, Tools: []*genai.Tool{{GoogleSearch: &genai.GoogleSearch{}}}}
+	imgCfg := &genai.ImageConfig{ImageSize: imageSize(opts.Size)}
 	if opts.AspectRatio != "" {
-		cfg.ImageConfig.AspectRatio = opts.AspectRatio
+		imgCfg.AspectRatio = opts.AspectRatio
+	}
+	if opts.PersonGeneration != "" {
+		imgCfg.PersonGeneration = opts.PersonGeneration
+	}
+	cfg := &genai.GenerateContentConfig{ResponseModalities: []string{"IMAGE", "TEXT"}, ImageConfig: imgCfg, Tools: []*genai.Tool{{GoogleSearch: &genai.GoogleSearch{}}}}
+	if opts.Seed != nil {
+		cfg.Seed = opts.Seed
+	}
+	if opts.ThinkingLevel != "" {
+		cfg.ThinkingConfig = &genai.ThinkingConfig{ThinkingLevel: genai.ThinkingLevel(opts.ThinkingLevel)}
 	}
 	logLine(opts.OutputMode, "info", "generating image...")
 	resp, err := client.Models.GenerateContent(ctx, opts.Model, contents, cfg)
@@ -333,6 +384,9 @@ Options:
   -d, --dir DIR         Output directory (default: current directory)
   -r, --ref FILE        Reference image (can be repeated)
   -t, --transparent     Remove background (pure Go, no external tools)
+      --seed N          Random seed for reproducible generation
+      --person MODE     Person generation: ALL, ADULT, NONE (default: ALL)
+      --thinking LEVEL  Thinking level: minimal, low, medium, high
       --api-key KEY     Gemini API key (or set GEMINI_API_KEY)
       --costs           Show accumulated cost summary
       --json            JSON output mode
