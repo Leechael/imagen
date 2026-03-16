@@ -1,33 +1,58 @@
-CLI_NAME   := nano-banana
-BUILD_TARGET := ./cmd/nano-banana
+BINARY_NAME := nano-banana
+BIN_DIR := bin
+BIN_PATH := $(BIN_DIR)/$(BINARY_NAME)
+OUT_DIR := dist
+CMD := ./cmd/nano-banana
+GOFLAGS ?= -buildvcs=false
 
-.PHONY: build test vet fmt lint clean tidy
+export GOFLAGS
 
-build:
-	go build -v -o $(CLI_NAME) $(BUILD_TARGET)
+.PHONY: tidy fmt test ci build run install clean cross-build help
 
-test:
-	go test ./... -count=1
-
-vet:
-	go vet ./...
-
-fmt:
-	gofmt -w ./cmd
-
-fmt-check:
-	@unformatted=$$(gofmt -l ./cmd); \
-	if [ -n "$$unformatted" ]; then \
-		echo "Unformatted files:"; echo "$$unformatted"; exit 1; \
-	fi
-
-lint: vet fmt-check
+help:
+	@echo "Targets:"
+	@echo "  make tidy         - go mod tidy"
+	@echo "  make fmt          - gofmt ./cmd"
+	@echo "  make test         - run unit tests"
+	@echo "  make ci           - fmt check + vet + tests + build"
+	@echo "  make build        - build local binary to ./$(BIN_PATH)"
+	@echo "  make run          - run CLI (pass ARGS='...')"
+	@echo "  make install      - install binary to GOPATH/bin"
+	@echo "  make clean        - remove build artifacts"
+	@echo "  make cross-build  - build darwin/linux amd64/arm64 binaries"
 
 tidy:
 	go mod tidy
 
-clean:
-	rm -f $(CLI_NAME)
-	rm -rf dist/
+fmt:
+	gofmt -w ./cmd
 
-ci: tidy fmt-check vet test build
+test:
+	go test ./... -count=1
+
+ci:
+	@unformatted=$$(gofmt -l ./cmd); \
+	if [ -n "$$unformatted" ]; then echo "Unformatted files:"; echo "$$unformatted"; exit 1; fi
+	go vet ./...
+	go test ./... -count=1
+	go build -v $(CMD)
+
+build:
+	mkdir -p $(BIN_DIR)
+	go build -o $(BIN_PATH) $(CMD)
+
+run:
+	go run $(CMD) $(ARGS)
+
+install:
+	go install $(CMD)
+
+clean:
+	rm -rf $(OUT_DIR) $(BIN_DIR)
+
+cross-build: clean
+	mkdir -p $(OUT_DIR)
+	GOOS=darwin GOARCH=amd64 go build -o $(OUT_DIR)/$(BINARY_NAME)-darwin-amd64 $(CMD)
+	GOOS=darwin GOARCH=arm64 go build -o $(OUT_DIR)/$(BINARY_NAME)-darwin-arm64 $(CMD)
+	GOOS=linux GOARCH=amd64 go build -o $(OUT_DIR)/$(BINARY_NAME)-linux-amd64 $(CMD)
+	GOOS=linux GOARCH=arm64 go build -o $(OUT_DIR)/$(BINARY_NAME)-linux-arm64 $(CMD)
