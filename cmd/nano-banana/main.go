@@ -584,6 +584,15 @@ func exitError(err error, mode outputMode) {
 	os.Exit(1)
 }
 func extFromMime(mt string) string {
+	preferred := map[string]string{
+		"image/jpeg": ".jpg",
+		"image/png":  ".png",
+		"image/gif":  ".gif",
+		"image/webp": ".webp",
+	}
+	if ext, ok := preferred[mt]; ok {
+		return ext
+	}
 	if exts, err := mime.ExtensionsByType(mt); err == nil && len(exts) > 0 {
 		return exts[0]
 	}
