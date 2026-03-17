@@ -259,10 +259,10 @@ func parseArgs(args []string) (options, error) {
 				return opts, errors.New("--thinking 缺少值")
 			}
 			switch strings.ToLower(args[i]) {
-			case "minimal", "low", "medium", "high":
+			case "minimal", "high":
 				opts.ThinkingLevel = strings.ToUpper(args[i])
 			default:
-				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, low, medium, high)", args[i])
+				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, high)", args[i])
 			}
 		case "--api-key":
 			i++
@@ -279,6 +279,9 @@ func parseArgs(args []string) (options, error) {
 	}
 	if opts.Size == "512" && opts.Model == "gemini-3-pro-image-preview" {
 		opts.Size = "1K"
+	}
+	if opts.ThinkingLevel != "" && opts.Model != "gemini-3.1-flash-image-preview" {
+		return opts, fmt.Errorf("--thinking is only supported with flash model, not %q", opts.Model)
 	}
 	if !opts.ShowCosts {
 		opts.Prompt = strings.TrimSpace(strings.Join(promptParts, " "))
@@ -386,7 +389,7 @@ Options:
   -t, --transparent     Remove background (pure Go, no external tools)
       --seed N          Random seed for reproducible generation
       --person MODE     Person generation: ALL, ADULT, NONE (default: ALL)
-      --thinking LEVEL  Thinking level: minimal, low, medium, high
+      --thinking LEVEL  Thinking level: minimal, high (flash only)
       --api-key KEY     Gemini API key (or set GEMINI_API_KEY)
       --costs           Show accumulated cost summary
       --json            JSON output mode
