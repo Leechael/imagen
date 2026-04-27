@@ -31,6 +31,29 @@ func (e *APIError) Error() string {
 	return fmt.Sprintf("xai api error (status %d): %s", e.Code, e.Message)
 }
 
+type apiErrorResponse struct {
+	Code    string `json:"code"`
+	Error   string `json:"error"`
+	Message string `json:"message"`
+}
+
+func parseAPIErrorMessage(body []byte) string {
+	var resp apiErrorResponse
+	if err := json.Unmarshal(body, &resp); err != nil {
+		return string(body)
+	}
+	if resp.Error != "" {
+		return resp.Error
+	}
+	if resp.Message != "" {
+		return resp.Message
+	}
+	if resp.Code != "" {
+		return resp.Code
+	}
+	return string(body)
+}
+
 type generateAPIRequest struct {
 	Model          string `json:"model"`
 	Prompt         string `json:"prompt"`
@@ -166,7 +189,7 @@ func (c *Client) generate(ctx context.Context, model, prompt string, n int, aspe
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, &APIError{Code: resp.StatusCode, Message: string(respBody), Status: http.StatusText(resp.StatusCode)}
+		return nil, &APIError{Code: resp.StatusCode, Message: parseAPIErrorMessage(respBody), Status: http.StatusText(resp.StatusCode)}
 	}
 
 	var apiResp generateAPIResponse
@@ -226,7 +249,7 @@ func (c *Client) edit(ctx context.Context, model, prompt string, refs []provider
 	}
 
 	if resp.StatusCode != http.StatusOK {
-		return nil, &APIError{Code: resp.StatusCode, Message: string(respBody), Status: http.StatusText(resp.StatusCode)}
+		return nil, &APIError{Code: resp.StatusCode, Message: parseAPIErrorMessage(respBody), Status: http.StatusText(resp.StatusCode)}
 	}
 
 	var apiResp generateAPIResponse
