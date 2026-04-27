@@ -34,21 +34,25 @@ or ~/.imagen/.env.
 
 ## Models
 
-    flash    gemini-3.1-flash-image-preview
-    pro      gemini-3-pro-image-preview
+    nb       gemini-2.5-flash-image           (Nano Banana)
+    flash    gemini-3.1-flash-image-preview   (Nano Banana 2)
+    nb2      gemini-3.1-flash-image-preview   (Nano Banana 2, same as flash)
+    pro      gemini-3-pro-image-preview       (Nano Banana Pro)
+    nb-pro   gemini-3-pro-image-preview       (Nano Banana Pro, same as pro)
 
 ## Supported Parameters
 
     --size SIZE
-        512, 1K, 2K, 4K  (default: 1K)
-        512 is remapped to 1K by the API.
+        nb:           1K only
+        flash, pro:   512, 1K, 2K, 4K  (512 is remapped to 1K by the API)
 
     --aspect RATIO
-        All models:  1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 4:5, 5:4, 21:9
-        Flash only:  1:4, 4:1, 1:8, 8:1
+        All models:   1:1, 16:9, 9:16, 4:3, 3:4, 3:2, 2:3, 4:5, 5:4, 21:9
+        flash only:   1:4, 4:1, 1:8, 8:1
 
     --seed N
         Integer seed for reproducible generation.
+        Not supported by nb (gemini-2.5-flash-image).
 
     --person MODE
         Controls whether generated images may include people.
@@ -57,16 +61,19 @@ or ~/.imagen/.env.
         NONE   no people generated
 
     --thinking LEVEL
-        minimal, low, medium, high   (flash only)
+        minimal, low, medium, high   (flash / nb2 only)
 
     --ref FILE
-        Reference image. Can be repeated; up to 10 images.
+        Reference image. Can be repeated.
+        nb:          up to 3 images
+        flash, pro:  up to 10 images
 
     -n, --count N
         Number of images to generate.
 
 ## Examples
 
+    imagen -m nb "a cat in a spacesuit"
     imagen -m google/flash "a cat in a spacesuit"
     imagen -m pro --seed 42 "futuristic city"
     imagen -m flash --thinking high "complex architectural diagram"

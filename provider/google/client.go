@@ -12,6 +12,7 @@ import (
 )
 
 var costRates = map[string]costRate{
+	"gemini-2.5-flash-image":         {Input: 0.30, ImageOutput: 30},
 	"gemini-3.1-flash-image-preview": {Input: 0.25, ImageOutput: 60},
 	"gemini-3-pro-image-preview":     {Input: 2.0, ImageOutput: 120},
 }
@@ -45,6 +46,19 @@ func (c *Client) Capabilities(model string) provider.Capability {
 	aspectRatios := make([]string, 0, len(validAspects))
 	for k := range validAspects {
 		aspectRatios = append(aspectRatios, k)
+	}
+	if model == "gemini-2.5-flash-image" {
+		return provider.Capability{
+			SupportsAspectRatio: true,
+			SupportsSeed:        false,
+			SupportsPerson:      true,
+			SupportsThinking:    false,
+			SupportsReferences:  true,
+			SupportsBatch:       true,
+			Sizes:               []string{"1K"},
+			AspectRatios:        aspectRatios,
+			MaxReferences:       3,
+		}
 	}
 	return provider.Capability{
 		SupportsAspectRatio: true,

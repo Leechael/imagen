@@ -7,6 +7,7 @@ import (
 
 var aliases = map[string]map[string]string{
 	"google": {
+		"nb":     "gemini-2.5-flash-image",
 		"flash":  "gemini-3.1-flash-image-preview",
 		"nb2":    "gemini-3.1-flash-image-preview",
 		"pro":    "gemini-3-pro-image-preview",

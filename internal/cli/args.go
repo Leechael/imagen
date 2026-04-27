@@ -276,6 +276,7 @@ Envs:
   XAI_API_KEY           API key for xAI Grok models
 
 Supported Models:
+  google/gemini-2.5-flash-image            aliases: nb
   google/gemini-3.1-flash-image-preview    aliases: flash, nb2
   google/gemini-3-pro-image-preview        aliases: pro, nb-pro
   xai/grok-imagine-image                   aliases: grok, grok-imagine
