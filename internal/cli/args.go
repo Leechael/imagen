@@ -15,9 +15,12 @@ var Version = "dev"
 
 var validSizes = map[string]bool{"512": true, "1K": true, "2K": true, "4K": true}
 var ValidAspects = map[string]bool{
+	// Google Gemini
 	"1:1": true, "16:9": true, "9:16": true, "4:3": true, "3:4": true,
 	"3:2": true, "2:3": true, "4:5": true, "5:4": true, "21:9": true,
 	"1:4": true, "1:8": true, "4:1": true, "8:1": true,
+	// xAI Grok (additional ratios not shared with Google)
+	"2:1": true, "1:2": true, "20:9": true, "19.5:9": true, "auto": true,
 }
 
 type Options struct {
@@ -38,6 +41,7 @@ type Options struct {
 	JQ               string
 	Count            int
 	ShowVersion      bool
+	HelpTopic        string
 }
 
 func ParseArgs(args []string) (Options, error) {
@@ -155,10 +159,10 @@ func ParseArgs(args []string) (Options, error) {
 				return opts, errors.New("--thinking 缺少值")
 			}
 			switch strings.ToLower(args[i]) {
-			case "minimal", "high":
+			case "minimal", "low", "medium", "high":
 				opts.ThinkingLevel = strings.ToLower(args[i])
 			default:
-				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, high)", args[i])
+				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, low, medium, high)", args[i])
 			}
 		case "--api-key":
 			i++
@@ -177,8 +181,13 @@ func ParseArgs(args []string) (Options, error) {
 			}
 			opts.Count = n
 		case "help":
-			PrintHelp()
-			os.Exit(0)
+			if i+1 < len(args) && !strings.HasPrefix(args[i+1], "-") {
+				opts.HelpTopic = args[i+1]
+				i++
+			} else {
+				PrintHelp()
+				os.Exit(0)
+			}
 		case "version":
 			opts.ShowVersion = true
 		default:
@@ -190,6 +199,10 @@ func ParseArgs(args []string) (Options, error) {
 	}
 
 	if opts.ShowVersion {
+		return opts, nil
+	}
+
+	if opts.HelpTopic != "" {
 		return opts, nil
 	}
 
@@ -211,9 +224,11 @@ func PrintHelp() {
 
 Usage:
   imagen [options] <prompt...>
+  imagen help <topic>
 
 Options:
   -h, --help            Show this help message
+  help <topic>          Show provider-specific help (google, grok)
   -o, --output NAME     Output file base name (default: imagen-<timestamp>)
   -s, --size SIZE       Image size: 512, 1K, 2K, 4K (default: 1K)
   -a, --aspect RATIO    Aspect ratio (e.g. 16:9, 4:3, 1:1)
@@ -224,7 +239,7 @@ Options:
   -t, --transparent     Remove background (pure Go, no external tools)
       --seed N          Random seed for reproducible generation
       --person MODE     Person generation: ALL, ADULT, NONE
-      --thinking LEVEL  Thinking level: minimal, high (flash only)
+      --thinking LEVEL  Thinking level: minimal, low, medium, high (flash only)
       --api-key KEY     API key (or set GEMINI_API_KEY / XAI_API_KEY)
       --costs           Show accumulated cost summary
       --json            JSON output mode
@@ -251,6 +266,10 @@ Supported Models:
   google/flash              gemini-3.1-flash-image-preview
   google/pro                gemini-3-pro-image-preview
   xai/grok                  grok-imagine-image
+
+Help Topics:
+  google, gemini           Google Gemini provider details
+  grok, xai                xAI Grok provider details
 `)
 }
 

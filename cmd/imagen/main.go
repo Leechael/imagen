@@ -33,6 +33,11 @@ func main() {
 		return
 	}
 
+	if opts.HelpTopic != "" {
+		icli.PrintHelpTopic(opts.HelpTopic)
+		return
+	}
+
 	icli.MigrateCostLog()
 
 	if opts.ShowCosts {
