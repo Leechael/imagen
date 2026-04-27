@@ -40,8 +40,10 @@ func LogLine(mode OutputMode, level, format string, a ...any) {
 func ExitError(err error, mode OutputMode) {
 	if mode == ModeJSON {
 		_ = json.NewEncoder(os.Stdout).Encode(Result{OK: false, Error: err.Error(), At: time.Now().UTC()})
+	} else if mode == ModeHuman {
+		fmt.Fprintf(os.Stderr, "[imagen] error: %s\n", err.Error())
 	} else {
-		fmt.Fprintln(os.Stderr, "Error:", err.Error())
+		fmt.Fprintf(os.Stderr, "error: %s\n", err.Error())
 	}
 	os.Exit(1)
 }
