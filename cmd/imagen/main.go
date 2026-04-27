@@ -111,6 +111,13 @@ func main() {
 			warnings = append(warnings, fmt.Sprintf("provider %s/%s does not support --thinking, ignoring", providerName, modelID))
 		}
 	}
+	if opts.Quality != "" {
+		if cap.SupportsQuality {
+			genReq.Quality = opts.Quality
+		} else {
+			warnings = append(warnings, fmt.Sprintf("provider %s does not support --quality, ignoring", providerName))
+		}
+	}
 	if opts.Count > 1 && !cap.SupportsBatch {
 		warnings = append(warnings, fmt.Sprintf("provider %s does not support batch generation, using count=1", providerName))
 		genReq.N = 1
@@ -274,6 +281,9 @@ func logConfig(opts icli.Options, providerName, modelID string, refCount int) {
 	}
 	if opts.ThinkingLevel != "" {
 		parts = append(parts, fmt.Sprintf("thinking: %s", opts.ThinkingLevel))
+	}
+	if opts.Quality != "" {
+		parts = append(parts, fmt.Sprintf("quality: %s", opts.Quality))
 	}
 	if opts.Transparent {
 		parts = append(parts, "transparent: true")

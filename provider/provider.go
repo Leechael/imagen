@@ -7,6 +7,7 @@ type Capability struct {
 	SupportsSeed        bool
 	SupportsPerson      bool
 	SupportsThinking    bool
+	SupportsQuality     bool
 	SupportsReferences  bool
 	SupportsBatch       bool
 	Sizes               []string
@@ -33,6 +34,7 @@ type GenerateRequest struct {
 	Seed        *int32
 	Person      string
 	Thinking    string
+	Quality     string
 	N           int
 }
 

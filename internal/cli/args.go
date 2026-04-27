@@ -36,6 +36,7 @@ type Options struct {
 	Seed             *int32
 	PersonGeneration string
 	ThinkingLevel    string
+	Quality          string
 	ShowCosts        bool
 	OutputMode       OutputMode
 	JQ               string
@@ -164,6 +165,17 @@ func ParseArgs(args []string) (Options, error) {
 			default:
 				return opts, fmt.Errorf("invalid --thinking value %q (use minimal, low, medium, high)", args[i])
 			}
+		case "--quality":
+			i++
+			if i >= len(args) {
+				return opts, errors.New("--quality 缺少值")
+			}
+			switch strings.ToLower(args[i]) {
+			case "low", "medium", "high":
+				opts.Quality = strings.ToLower(args[i])
+			default:
+				return opts, fmt.Errorf("invalid --quality value %q (use low, medium, high)", args[i])
+			}
 		case "--api-key":
 			i++
 			if i >= len(args) {
@@ -238,8 +250,9 @@ Options:
   -r, --ref FILE        Reference image (can be repeated)
   -t, --transparent     Remove background (pure Go, no external tools)
       --seed N          Random seed for reproducible generation
-      --person MODE     Person generation: ALL, ADULT, NONE
+      --person MODE     Person generation: ALL, ADULT, NONE (google only)
       --thinking LEVEL  Thinking level: minimal, low, medium, high (flash only)
+      --quality LEVEL   Output quality: low, medium, high (grok only)
       --api-key KEY     API key (or set GEMINI_API_KEY / XAI_API_KEY)
       --costs           Show accumulated cost summary
       --json            JSON output mode
@@ -263,9 +276,9 @@ Envs:
   XAI_API_KEY           API key for xAI Grok models
 
 Supported Models:
-  google/flash              gemini-3.1-flash-image-preview
-  google/pro                gemini-3-pro-image-preview
-  xai/grok                  grok-imagine-image
+  google/gemini-3.1-flash-image-preview    aliases: flash, nb2
+  google/gemini-3-pro-image-preview        aliases: pro, nb-pro
+  xai/grok-imagine-image                   aliases: grok, grok-imagine
 
 Help Topics:
   google, gemini           Google Gemini provider details

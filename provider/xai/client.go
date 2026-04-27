@@ -109,6 +109,7 @@ func (c *Client) Capabilities(_ string) provider.Capability {
 		SupportsSeed:        false,
 		SupportsPerson:      false,
 		SupportsThinking:    false,
+		SupportsQuality:     true,
 		SupportsReferences:  true,
 		SupportsBatch:       true,
 		Sizes:               []string{"1K", "2K"},
@@ -130,9 +131,9 @@ func (c *Client) Generate(ctx context.Context, req provider.GenerateRequest) (*p
 	resolution, warnings := mapSize(req.Size)
 
 	if len(req.References) == 0 {
-		return c.generate(ctx, model, req.Prompt, n, req.AspectRatio, resolution, warnings)
+		return c.generate(ctx, model, req.Prompt, n, req.AspectRatio, resolution, req.Quality, warnings)
 	}
-	return c.edit(ctx, model, req.Prompt, req.References, n, req.AspectRatio, resolution, warnings)
+	return c.edit(ctx, model, req.Prompt, req.References, n, req.AspectRatio, resolution, req.Quality, warnings)
 }
 
 func mapSize(size string) (resolution string, warnings []string) {
@@ -152,11 +153,11 @@ func mapSize(size string) (resolution string, warnings []string) {
 	}
 }
 
-func (c *Client) generate(ctx context.Context, model, prompt string, n int, aspectRatio, resolution string, warnings []string) (*provider.GenerateResult, error) {
+func (c *Client) generate(ctx context.Context, model, prompt string, n int, aspectRatio, resolution, quality string, warnings []string) (*provider.GenerateResult, error) {
 	result := &provider.GenerateResult{Model: model, Warnings: warnings}
 	for remaining := n; remaining > 0; {
 		batch := min(remaining, maxBatchSize)
-		res, err := c.callGenerate(ctx, model, prompt, batch, aspectRatio, resolution)
+		res, err := c.callGenerate(ctx, model, prompt, batch, aspectRatio, resolution, quality)
 		if err != nil {
 			return nil, err
 		}
@@ -167,7 +168,7 @@ func (c *Client) generate(ctx context.Context, model, prompt string, n int, aspe
 	return result, nil
 }
 
-func (c *Client) callGenerate(ctx context.Context, model, prompt string, n int, aspectRatio, resolution string) (*provider.GenerateResult, error) {
+func (c *Client) callGenerate(ctx context.Context, model, prompt string, n int, aspectRatio, resolution, quality string) (*provider.GenerateResult, error) {
 	apiReq := generateAPIRequest{
 		Model:          model,
 		Prompt:         prompt,
@@ -179,6 +180,9 @@ func (c *Client) callGenerate(ctx context.Context, model, prompt string, n int, 
 	}
 	if resolution != "" {
 		apiReq.Resolution = resolution
+	}
+	if quality != "" {
+		apiReq.Quality = quality
 	}
 
 	body, err := json.Marshal(apiReq)
@@ -216,7 +220,7 @@ func (c *Client) callGenerate(ctx context.Context, model, prompt string, n int, 
 	return c.buildResult(model, apiResp, nil)
 }
 
-func (c *Client) edit(ctx context.Context, model, prompt string, refs []provider.Reference, n int, aspectRatio, resolution string, warnings []string) (*provider.GenerateResult, error) {
+func (c *Client) edit(ctx context.Context, model, prompt string, refs []provider.Reference, n int, aspectRatio, resolution, quality string, warnings []string) (*provider.GenerateResult, error) {
 	if len(refs) > 5 {
 		return nil, fmt.Errorf("at most 5 reference images are allowed, got %d", len(refs))
 	}
@@ -230,7 +234,7 @@ func (c *Client) edit(ctx context.Context, model, prompt string, refs []provider
 	result := &provider.GenerateResult{Model: model, Warnings: warnings}
 	for remaining := n; remaining > 0; {
 		batch := min(remaining, maxBatchSize)
-		res, err := c.callEdit(ctx, model, prompt, images, batch, aspectRatio, resolution)
+		res, err := c.callEdit(ctx, model, prompt, images, batch, aspectRatio, resolution, quality)
 		if err != nil {
 			return nil, err
 		}
@@ -241,7 +245,7 @@ func (c *Client) edit(ctx context.Context, model, prompt string, refs []provider
 	return result, nil
 }
 
-func (c *Client) callEdit(ctx context.Context, model, prompt string, images []string, n int, aspectRatio, resolution string) (*provider.GenerateResult, error) {
+func (c *Client) callEdit(ctx context.Context, model, prompt string, images []string, n int, aspectRatio, resolution, quality string) (*provider.GenerateResult, error) {
 	apiReq := editAPIRequest{
 		Model:          model,
 		Prompt:         prompt,
@@ -254,6 +258,9 @@ func (c *Client) callEdit(ctx context.Context, model, prompt string, images []st
 	}
 	if resolution != "" {
 		apiReq.Resolution = resolution
+	}
+	if quality != "" {
+		apiReq.Quality = quality
 	}
 
 	body, err := json.Marshal(apiReq)

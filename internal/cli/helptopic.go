@@ -51,9 +51,10 @@ or ~/.imagen/.env.
         Integer seed for reproducible generation.
 
     --person MODE
-        ALL    allow adults and children
-        ADULT  allow adults only (default)
-        NONE   block all people
+        Controls whether generated images may include people.
+        ALL    people of any age allowed
+        ADULT  only adults allowed (API default)
+        NONE   no people generated
 
     --thinking LEVEL
         minimal, low, medium, high   (flash only)
@@ -101,22 +102,16 @@ or ~/.imagen/.env.
         Wide/tall: 20:9, 19.5:9
         Auto:      auto  (match aspect ratio of the first reference image)
 
+    --quality LEVEL
+        low     fast generation, lower latency
+        medium  balanced (API default)
+        high    better detail, lighting, shadows, and text rendering
+
     --ref FILE
         Reference image (image editing mode). Can be repeated; up to 5 images.
 
     -n, --count N
         Number of images to generate (max 10 per API call).
-
-## API Parameters (not yet exposed as CLI flags)
-
-    quality    Controls output quality: low, medium, high
-               low = fast generation; high = better detail, lighting, text.
-
-## Unsupported Parameters
-
-The following CLI flags are accepted but ignored by the Grok provider:
-
-    --seed, --person, --thinking
 
 ## Examples
 
