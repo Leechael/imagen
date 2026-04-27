@@ -28,6 +28,11 @@ func main() {
 		icli.ExitError(err, icli.ModeHuman)
 	}
 
+	if opts.ShowVersion {
+		fmt.Println(icli.Version)
+		return
+	}
+
 	icli.MigrateCostLog()
 
 	if opts.ShowCosts {
@@ -39,6 +44,9 @@ func main() {
 
 	if opts.JQ != "" && opts.OutputMode != icli.ModeJSON {
 		icli.ExitError(errors.New("--jq 只能和 --json 一起使用"), opts.OutputMode)
+	}
+	if opts.Transparent && opts.Output == "-" {
+		icli.ExitError(errors.New("--transparent is not compatible with -o -"), opts.OutputMode)
 	}
 
 	modelSpec := opts.Model
@@ -141,6 +149,17 @@ func main() {
 	files := []string{}
 	for idx, img := range res.Images {
 		ext := extFromMime(img.MIMEType)
+		if opts.Output == "-" {
+			if idx == 0 {
+				if _, err := os.Stdout.Write(img.Data); err != nil {
+					icli.ExitError(err, opts.OutputMode)
+				}
+				files = append(files, "-")
+			} else {
+				icli.LogLine(opts.OutputMode, "warn", "skipping image %d: stdout already in use", idx)
+			}
+			continue
+		}
 		name := opts.Output
 		if idx > 0 {
 			name = fmt.Sprintf("%s_%d", opts.Output, idx)
@@ -204,6 +223,11 @@ func main() {
 		Cost:     res.Cost,
 		Warnings: warnings,
 		At:       time.Now().UTC(),
+	}
+
+	if opts.Output == "-" {
+		// Binary data already written to stdout; skip text output.
+		return
 	}
 
 	switch opts.OutputMode {

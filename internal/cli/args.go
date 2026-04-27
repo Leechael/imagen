@@ -10,6 +10,9 @@ import (
 	"time"
 )
 
+// Version is set at build time via -ldflags.
+var Version = "dev"
+
 var validSizes = map[string]bool{"512": true, "1K": true, "2K": true, "4K": true}
 var ValidAspects = map[string]bool{
 	"1:1": true, "16:9": true, "9:16": true, "4:3": true, "3:4": true,
@@ -34,6 +37,7 @@ type Options struct {
 	OutputMode       OutputMode
 	JQ               string
 	Count            int
+	ShowVersion      bool
 }
 
 func ParseArgs(args []string) (Options, error) {
@@ -61,6 +65,8 @@ func ParseArgs(args []string) (Options, error) {
 		case "-h", "--help":
 			PrintHelp()
 			os.Exit(0)
+		case "-v", "--version":
+			opts.ShowVersion = true
 		case "--costs":
 			opts.ShowCosts = true
 		case "--json":
@@ -170,12 +176,21 @@ func ParseArgs(args []string) (Options, error) {
 				return opts, fmt.Errorf("invalid --count value %q (must be >= 1)", args[i])
 			}
 			opts.Count = n
+		case "help":
+			PrintHelp()
+			os.Exit(0)
+		case "version":
+			opts.ShowVersion = true
 		default:
 			if strings.HasPrefix(a, "-") {
 				return opts, fmt.Errorf("unknown option: %s", a)
 			}
 			promptParts = append(promptParts, a)
 		}
+	}
+
+	if opts.ShowVersion {
+		return opts, nil
 	}
 
 	if !opts.ShowCosts {
@@ -227,6 +242,15 @@ Examples:
   imagen -r style.png "apply this style to a forest"
   imagen --json "logo for a coffee shop" | jq .files
   imagen --costs
+
+Envs:
+  GEMINI_API_KEY        API key for Google Gemini models
+  XAI_API_KEY           API key for xAI Grok models
+
+Supported Models:
+  google/flash              gemini-3.1-flash-image-preview
+  google/pro                gemini-3-pro-image-preview
+  xai/grok                  grok-imagine-image
 `)
 }
 
