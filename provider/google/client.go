@@ -127,8 +127,19 @@ func (c *Client) callOnce(ctx context.Context, client *genai.Client, model strin
 	}
 
 	var images []provider.Image
+	var texts []string
 	for _, cand := range resp.Candidates {
-		if cand == nil || cand.Content == nil {
+		if cand == nil {
+			continue
+		}
+		if cand.FinishReason != "" && cand.FinishReason != "STOP" {
+			msg := string(cand.FinishReason)
+			if cand.FinishMessage != "" {
+				msg += ": " + cand.FinishMessage
+			}
+			texts = append(texts, msg)
+		}
+		if cand.Content == nil {
 			continue
 		}
 		for _, p := range cand.Content.Parts {
@@ -138,11 +149,24 @@ func (c *Client) callOnce(ctx context.Context, client *genai.Client, model strin
 					MIMEType: p.InlineData.MIMEType,
 				})
 			}
+			if p.Text != "" {
+				texts = append(texts, p.Text)
+			}
 		}
 	}
 
 	if len(images) == 0 {
-		return nil, errors.New("no images generated")
+		var errMsg string
+		if resp.PromptFeedback != nil && resp.PromptFeedback.BlockReasonMessage != "" {
+			errMsg = resp.PromptFeedback.BlockReasonMessage
+		} else if resp.PromptFeedback != nil && resp.PromptFeedback.BlockReason != "" {
+			errMsg = string(resp.PromptFeedback.BlockReason)
+		} else if len(texts) > 0 {
+			errMsg = strings.Join(texts, "; ")
+		} else {
+			errMsg = "no images generated"
+		}
+		return nil, errors.New(errMsg)
 	}
 
 	var cost float64
